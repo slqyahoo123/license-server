@@ -122,6 +122,11 @@ app.post('/api/license/verify', async (req, res) => {
     }
 });
 
+// PayPal subscription redirect
+app.get('/subscribe', (req, res) => {
+    res.redirect('https://www.paypal.com/webapps/billing/subscriptions?plan_id=P-9RD48572XF8523849NHZSPKA');
+});
+
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'healthy', timestamp: Date.now() }));
 
