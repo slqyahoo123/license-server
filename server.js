@@ -34,19 +34,42 @@ initDB().then(() => {
  */
 app.post('/api/webhook/stripe', async (req, res) => {
     const { email, plan, projectId } = req.body;
-    
+
     if (!email || !projectId) {
         return res.status(400).json({ error: 'Missing email or projectId' });
     }
 
     const licenseKey = `V3-${projectId}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
-    
+
     try {
         await createLicense(licenseKey, email, projectId);
         console.log(`[SALES] New license issued: ${licenseKey} for ${projectId}`);
         res.status(201).json({ status: 'success', key: licenseKey });
     } catch (err) {
         console.error('[SALES] Error creating license:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+/**
+ * PAYPAL SUBSCRIPTION WEBHOOK
+ * Called after user subscribes via PayPal. Creates an ALL_ACCESS license key.
+ */
+app.post('/api/webhook/paypal', async (req, res) => {
+    const { email, subscriptionId } = req.body;
+
+    if (!email || !subscriptionId) {
+        return res.status(400).json({ error: 'Missing email or subscriptionId' });
+    }
+
+    const licenseKey = `V3-PAYPAL-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+
+    try {
+        await createLicense(licenseKey, email, 'ALL_ACCESS', Date.now() + 365 * 24 * 60 * 60 * 1000);
+        console.log(`[PAYPAL] License issued: ${licenseKey} for ${email} (sub: ${subscriptionId})`);
+        res.status(201).json({ status: 'success', key: licenseKey });
+    } catch (err) {
+        console.error('[PAYPAL] Error creating license:', err);
         res.status(500).json({ error: 'Database error' });
     }
 });
