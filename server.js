@@ -6,7 +6,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
-const { initDB, getLicenseByKey, createLicense } = require('./database');
+const { initDB, getLicenseByKey, createLicense, addToWaitlist, getWaitlistCount } = require('./database');
 const { generateToken } = require('./auth_service');
 
 const app = express();
@@ -125,6 +125,26 @@ app.post('/api/license/verify', async (req, res) => {
 // PayPal subscription redirect
 app.get('/subscribe', (req, res) => {
     res.redirect('https://www.paypal.com/webapps/billing/subscriptions?plan_id=P-9RD48572XF8523849NHZSPKA');
+});
+
+// VecMindB waitlist
+app.post('/api/waitlist', async (req, res) => {
+    const { email, name, whitepaper } = req.body;
+    if (!email || !email.includes('@')) {
+        return res.status(400).json({ success: false, message: 'Invalid email address.' });
+    }
+    try {
+        const result = await addToWaitlist(email, name, whitepaper);
+        console.log(`[WAITLIST] ${email} joined (total: ${getWaitlistCount()})`);
+        res.json({
+            success: true,
+            message: 'Successfully joined the waitlist.',
+            reference_id: Math.random().toString(36).substring(7).toUpperCase()
+        });
+    } catch (err) {
+        console.error('[WAITLIST] Error:', err);
+        res.status(500).json({ success: false, message: 'Internal server error.' });
+    }
 });
 
 // Health check
